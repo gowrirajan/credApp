@@ -1,10 +1,10 @@
 package com.example.credApp.service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
-import java.util.stream.Collectors;
-
+import java.util.UUID;
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
@@ -23,44 +23,74 @@ public class CredentialService {
 
     private static final String ALGORITHM = "AES";
     private static final String TRANSFORMATION = "AES";
+    private static final int STATUS_ASSIGNED = 101; 
+    private static final int STATUS_AVAILABLE = 100; 
 
     public String getEncryptedActiveCredentials(String userEmail) throws Exception {
-        // Find active credentials for the user
-        List<Credential> activeCredentials = credentialRepository.findByUserEmailAndStatus(userEmail, "active");
+        
+        List<Credential> existingCredentials = credentialRepository.findByUserEmailAndStatus(userEmail, STATUS_ASSIGNED);
 
-        // Log the number of active credentials found
-        System.out.println("Active credentials found for " + userEmail + ": " + activeCredentials.size());
-
-        // If no active credentials found, check for existing credential with null userId and userEmail
-        if (activeCredentials.isEmpty()) {
-            Credential existingCredential = credentialRepository.findFirstByUserIdIsNullAndUserEmailIsNull();
-            if (existingCredential != null) {
-                // Update the existing credential
-                existingCredential.setUserEmail(userEmail);
-                existingCredential.setUserId(userEmail);
-                existingCredential.setStatus("active"); // Set status to active
-                existingCredential.setModifiedTs(LocalDateTime.now());
-                existingCredential.setModifiedBy("admin");
-                credentialRepository.save(existingCredential);
-                
-                activeCredentials = List.of(existingCredential);
-            } else {
-                // No existing credential found to update
-                return "No existing credential found to update.";
+        if (!existingCredentials.isEmpty()) {
+            
+            Credential credential = existingCredentials.get(0);
+            
+            credential.setModifiedTs(LocalDateTime.now());
+            credential.setModifiedBy("admin");
+            credentialRepository.save(credential); 
+            
+            String newEncryptedValue = encrypt(credential.getCredential().toString(), generateKey());
+            
+            List<String> encryptedCredentials = credential.getEncryptedCredentials();
+            if (encryptedCredentials == null) {
+                encryptedCredentials = new ArrayList<>(); 
             }
-        } else {
-            // Change the status of all found active credentials to inactive
-            for (Credential c : activeCredentials) {
-                c.setStatus("inactive");
-                credentialRepository.save(c);
-            }
+            encryptedCredentials.add(newEncryptedValue);
+            credential.setEncryptedCredentials(encryptedCredentials);
+            credentialRepository.save(credential); 
+            return encryptedCredentials.toString(); 
         }
 
-        // Encrypt and return the credentials
-        SecretKey secretKey = generateKey();
-        return activeCredentials.stream()
-                .map(c -> encrypt(c.getCredential(), secretKey))
-                .collect(Collectors.joining(", ")); // Join with a comma and space
+        List<Credential> availableCredentials = credentialRepository.findByStatus(STATUS_AVAILABLE);
+        if (!availableCredentials.isEmpty()) {
+            Credential availableCredential = availableCredentials.get(1);
+            
+            availableCredential.setUserEmail(userEmail);
+            availableCredential.setUserId(userEmail); 
+            availableCredential.setStatus(STATUS_ASSIGNED);
+            availableCredential.setModifiedTs(LocalDateTime.now());
+            availableCredential.setModifiedBy("admin");
+
+            String newEncryptedValue = encrypt(availableCredential.getCredential().toString(), generateKey());
+            List<String> encryptedCredentials = availableCredential.getEncryptedCredentials();
+            if (encryptedCredentials == null) {
+                encryptedCredentials = new ArrayList<>();
+            }
+            encryptedCredentials.add(newEncryptedValue);
+            availableCredential.setEncryptedCredentials(encryptedCredentials);
+            credentialRepository.save(availableCredential); 
+
+            return encryptedCredentials.toString(); 
+        }
+
+        Credential newCredential = new Credential();
+        newCredential.setCredential(UUID.randomUUID()); 
+        newCredential.setUserEmail(userEmail);
+        newCredential.setUserId(userEmail); 
+        newCredential.setStatus(STATUS_ASSIGNED);
+        newCredential.setCreatedTs(LocalDateTime.now());
+        newCredential.setCreatedBy("admin");
+        newCredential.setModifiedTs(LocalDateTime.now());
+        newCredential.setModifiedBy("admin");
+
+        
+        List<String> encryptedCredentials = new ArrayList<>();
+        String newEncryptedValue = encrypt(newCredential.getCredential().toString(), generateKey());
+        encryptedCredentials.add(newEncryptedValue);
+        newCredential.setEncryptedCredentials(encryptedCredentials);
+
+        credentialRepository.save(newCredential);
+
+        return encryptedCredentials.toString(); 
     }
 
     private String encrypt(String data, SecretKey key) {
@@ -76,7 +106,7 @@ public class CredentialService {
 
     private SecretKey generateKey() throws Exception {
         KeyGenerator keyGen = KeyGenerator.getInstance(ALGORITHM);
-        keyGen.init(256); // Use the appropriate key size for your needs
+        keyGen.init(256); 
         return keyGen.generateKey();
     }
 }

@@ -2,6 +2,8 @@ package com.example.credApp.model;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.UUID;
 
 @Entity
 @Table(name = "credential", schema = "credential_inventory")
@@ -11,14 +13,19 @@ public class Credential {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String credential;
+    @Column(name = "credential", nullable = false)
+    private UUID credential;
+
     private String userId; 
     private String userEmail;
-    private String status;
+    private Integer status;
     private LocalDateTime createdTs;
     private String createdBy;
     private LocalDateTime modifiedTs;
     private String modifiedBy;
+
+    @ElementCollection
+    private List<String> encryptedCredentials;
 
     // Getters and Setters
     public Long getId() {
@@ -29,11 +36,11 @@ public class Credential {
         this.id = id;
     }
 
-    public String getCredential() {
+    public UUID getCredential() {
         return credential;
     }
 
-    public void setCredential(String credential) {
+    public void setCredential(UUID credential) {
         this.credential = credential;
     }
 
@@ -53,11 +60,11 @@ public class Credential {
         this.userEmail = userEmail; // Ensure this method is defined
     }
 
-    public String getStatus() {
+    public Integer getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(Integer status) {
         this.status = status;
     }
 
@@ -91,6 +98,14 @@ public class Credential {
 
     public void setModifiedBy(String modifiedBy) {
         this.modifiedBy = modifiedBy;
+    }
+
+    public List<String> getEncryptedCredentials() {
+        return encryptedCredentials;
+    }
+
+    public void setEncryptedCredentials(List<String> encryptedCredentials) {
+        this.encryptedCredentials = encryptedCredentials;
     }
 }
 
