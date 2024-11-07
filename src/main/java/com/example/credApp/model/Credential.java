@@ -14,7 +14,7 @@ public class Credential {
     private Long id;
 
     @Column(name = "credential", nullable = false)
-    private UUID credential;
+    private String credential;
 
     private String userId; 
     private String userEmail;
@@ -36,11 +36,11 @@ public class Credential {
         this.id = id;
     }
 
-    public UUID getCredential() {
+    public String getCredential() {
         return credential;
     }
 
-    public void setCredential(UUID credential) {
+    public void setCredential(String credential) {
         this.credential = credential;
     }
 
