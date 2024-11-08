@@ -1,15 +1,13 @@
 package com.example.credApp.controller;
 
 import com.example.credApp.service.CredentialService;
-
-import java.util.List;
-import java.util.Map;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/credentials")
@@ -19,23 +17,17 @@ public class CredentialController {
     private CredentialService credentialService;
 
     @PostMapping("/extract-active")
-    public ResponseEntity<List<String>> extractActiveCredentials(@RequestBody Map<String, String> request) {
+    public ResponseEntity<String> extractActiveCredentials(@RequestBody Map<String, String> request) {
         String userEmail = request.get("userEmail");
         try {
-            // Fetch the encrypted credentials as a list
-            List<String> encryptedCredentials = credentialService.getEncryptedActiveCredentials(userEmail);
-            // Return the list directly as JSON array
-            return ResponseEntity.ok(encryptedCredentials);
+            String encryptedCredential = credentialService.getEncryptedActiveCredentials(userEmail);
+            return ResponseEntity.ok(encryptedCredential);
         } catch (Exception e) {
             e.printStackTrace();
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error retrieving encrypted credentials");
         }
     }
 }
-
-
-
-
 
 
 

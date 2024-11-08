@@ -2,8 +2,7 @@ package com.example.credApp.model;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.UUID;
+
 
 @Entity
 @Table(name = "credential", schema = "credential_inventory")
@@ -24,8 +23,7 @@ public class Credential {
     private LocalDateTime modifiedTs;
     private String modifiedBy;
 
-    @ElementCollection
-    private List<String> encryptedCredentials;
+    private String encryptedCredentials;
 
     // Getters and Setters
     public Long getId() {
@@ -100,11 +98,11 @@ public class Credential {
         this.modifiedBy = modifiedBy;
     }
 
-    public List<String> getEncryptedCredentials() {
+    public String getEncryptedCredentials() {
         return encryptedCredentials;
     }
 
-    public void setEncryptedCredentials(List<String> encryptedCredentials) {
+    public void setEncryptedCredentials(String encryptedCredentials) {
         this.encryptedCredentials = encryptedCredentials;
     }
 }
