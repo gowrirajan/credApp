@@ -11,5 +11,3 @@ public interface CredentialRepository extends JpaRepository<Credential, Long> {
     List<Credential> findByStatus(Integer status); 
     Credential findFirstByUserIdIsNullAndUserEmailIsNull();
 }
-
-

@@ -108,4 +108,3 @@ public class Credential {
         this.encryptedCredentials = encryptedCredentials;
     }
 }
-
