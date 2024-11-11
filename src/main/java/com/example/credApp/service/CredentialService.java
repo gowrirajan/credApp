@@ -5,6 +5,8 @@ import java.util.Base64;
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.example.credApp.model.Credential;
@@ -21,6 +23,7 @@ public class CredentialService {
     private static final String TRANSFORMATION = "AES";
     private static final int STATUS_ASSIGNED = 101; 
     private static final int STATUS_AVAILABLE = 100; 
+    private static final String STATIC_KEY = "YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXphYmNkZWY=";
 
     public String getEncryptedActiveCredentials(String userEmail) throws Exception {
         System.out.println("Fetching encrypted credentials for user: " + userEmail);
@@ -58,7 +61,7 @@ public class CredentialService {
         credential.setModifiedBy("admin");
 
         // Encrypt the credential and set the encrypted value
-        String newEncryptedValue = encrypt(credential.getCredential(), generateKey());
+        String newEncryptedValue = encrypt(credential.getCredential());
         System.out.println("Encrypted credential: " + newEncryptedValue);
 
         // Set the single encrypted credential value
@@ -68,8 +71,9 @@ public class CredentialService {
         return newEncryptedValue; // Return the single encrypted value
     }
 
-    private String encrypt(String data, SecretKey key) {
+    private String encrypt(String data) {
         try {
+            SecretKey key = loadStaticKey();
             Cipher cipher = Cipher.getInstance(TRANSFORMATION);
             cipher.init(Cipher.ENCRYPT_MODE, key);
             byte[] encryptedData = cipher.doFinal(data.getBytes());
@@ -83,5 +87,10 @@ public class CredentialService {
         KeyGenerator keyGen = KeyGenerator.getInstance(ALGORITHM);
         keyGen.init(256); // Key size
         return keyGen.generateKey();
+    }
+
+    private SecretKey loadStaticKey() {
+        byte[] decodedKey = Base64.getDecoder().decode(STATIC_KEY);
+        return new SecretKeySpec(decodedKey, ALGORITHM);
     }
 }
