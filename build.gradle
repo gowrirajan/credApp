@@ -22,7 +22,9 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	runtimeOnly 'org.postgresql:postgresql'
 
-	//nano id 
+	//nano id
+	// implementation 'com.aventrix:nanoid:2.0.0'
+	
 	implementation 'com.aventrix.jnanoid:jnanoid:2.0.0'
 		
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'

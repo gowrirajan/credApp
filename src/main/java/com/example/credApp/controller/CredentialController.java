@@ -27,6 +27,28 @@ public class CredentialController {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error retrieving encrypted credentials");
         }
     }
+
+    @PostMapping("/validate")
+    public ResponseEntity<?> validateCredential(@RequestBody Map<String, String> request) {
+        String encryptedCredential = request.get("encryptedCredential");
+
+        if (encryptedCredential == null || encryptedCredential.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "status", "error",
+                "message", "Encrypted credential is required."
+            ));
+        }
+
+        try {
+            Map<String, String> validationResponse = credentialService.validateEncryptedCredential(encryptedCredential);
+            return ResponseEntity.ok(validationResponse); // Return Nano ID and user email
+        } catch (ResponseStatusException e) {
+            return ResponseEntity.status(e.getStatusCode()).body(Map.of(
+                "status", "error",
+                "message", e.getReason()
+            ));
+        }
+    }
 }
 
 

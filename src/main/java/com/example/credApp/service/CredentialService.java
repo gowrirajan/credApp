@@ -2,16 +2,22 @@ package com.example.credApp.service;
 
 import java.time.LocalDateTime;
 import java.util.Base64;
+import java.util.Map;
+
 import javax.crypto.Cipher;
-import javax.crypto.KeyGenerator;
+// import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
+
 import com.example.credApp.model.Credential;
 import com.example.credApp.repository.CredentialRepository;
 import static com.aventrix.jnanoid.jnanoid.NanoIdUtils.*;
+// import com.aventrix.nanoid.NanoId;
 
 @Service
 public class CredentialService {
@@ -21,8 +27,8 @@ public class CredentialService {
 
     private static final String ALGORITHM = "AES";
     private static final String TRANSFORMATION = "AES";
-    private static final int STATUS_ASSIGNED = 101; 
-    private static final int STATUS_AVAILABLE = 100; 
+    private static final int STATUS_ASSIGNED = 101;
+    private static final int STATUS_AVAILABLE = 100;
     private static final String STATIC_KEY = "YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXphYmNkZWY=";
 
     public String getEncryptedActiveCredentials(String userEmail) throws Exception {
@@ -56,19 +62,54 @@ public class CredentialService {
             }
         }
 
-        // Update modified timestamp and encrypt the credential
         credential.setModifiedTs(LocalDateTime.now());
         credential.setModifiedBy("admin");
 
         // Encrypt the credential and set the encrypted value
         String newEncryptedValue = encrypt(credential.getCredential());
-        System.out.println("Encrypted credential: " + newEncryptedValue);
+        // System.out.println("Encrypted credential: " + newEncryptedValue); 
 
-        // Set the single encrypted credential value
+
         credential.setEncryptedCredentials(newEncryptedValue);
-        credentialRepository.save(credential); // Save the credential with updated encryption
+        credentialRepository.save(credential); 
 
-        return newEncryptedValue; // Return the single encrypted value
+        return newEncryptedValue; 
+    }
+
+    public Map<String, String> validateEncryptedCredential(String encryptedCredential) {
+        try {
+
+            String decryptedValue = decrypt(encryptedCredential);
+
+            Credential credential = credentialRepository.findByCredential(decryptedValue);
+
+            if (credential != null) {
+
+                return Map.of(
+                        "credential", credential.getCredential(),
+                        "userEmail", credential.getUserEmail()
+                );
+            } else {
+                // Not Found: Return 404
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Decrypted value not found in the database");
+            }
+        } catch (RuntimeException e) {
+            // Decryption failed: Return 401
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid encrypted value or decryption failed");
+        }
+    }
+
+    public String decrypt(String encryptedData) {
+        try {
+            SecretKey key = loadStaticKey();
+            Cipher cipher = Cipher.getInstance(TRANSFORMATION);
+            cipher.init(Cipher.DECRYPT_MODE, key);
+            byte[] decodedData = Base64.getDecoder().decode(encryptedData);
+            byte[] decryptedData = cipher.doFinal(decodedData);
+            return new String(decryptedData);
+        } catch (Exception e) {
+            throw new RuntimeException("Error while decrypting data", e);
+        }
     }
 
     private String encrypt(String data) {
@@ -83,11 +124,12 @@ public class CredentialService {
         }
     }
 
-    private SecretKey generateKey() throws Exception {
-        KeyGenerator keyGen = KeyGenerator.getInstance(ALGORITHM);
-        keyGen.init(256); // Key size
-        return keyGen.generateKey();
-    }
+    // generates random key for encryption
+    // private SecretKey generateKey() throws Exception {
+    //     KeyGenerator keyGen = KeyGenerator.getInstance(ALGORITHM);
+    //     keyGen.init(256); // Key size
+    //     return keyGen.generateKey();
+    // }
 
     private SecretKey loadStaticKey() {
         byte[] decodedKey = Base64.getDecoder().decode(STATIC_KEY);
